@@ -1,0 +1,6 @@
+.idea
+ChromeDriver/
+cities.txt
+src/main/resources/
+src/test/
+target/
