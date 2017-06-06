@@ -1,5 +1,9 @@
 package com.bigbro.reports;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -11,10 +15,7 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -39,13 +40,15 @@ public class Monthly {
 
     public void downloadDatas(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
 
-        downloadRecordFiles(cityMap, startDate, endDate);
+        //downloadRecordFiles(cityMap, startDate, endDate);
 
-        downloadFinanceFiles(cityMap, startDate, endDate);
+        //downloadFinanceFiles(cityMap, startDate, endDate);
 
-        downloadClientBase(cityMap);
+        //downloadClientBase(cityMap);
 
-        downloadServices(cityMap, startDate, endDate);
+        //downloadServices(cityMap, startDate, endDate);
+
+        downloadClientsByMasters(cityMap, startDate, endDate);
 
         //выгрузка из family.likebro
         //downloadGoogsSale(cityMap, startDate, endDate);
@@ -218,6 +221,59 @@ public class Monthly {
             in.close();
             out.close();
         }
+    }
+
+    private void downloadClientsByMasters(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws IOException {
+        String linkSchema = "https://yclients.com/analytics/%d?start_date=%s&end_date=%s&user_id=0&position_id=0&master_id=%d";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+        ArrayList<String> resultList = new ArrayList<>();
+
+        for (Map.Entry<Integer, String> pair : cityMap.entrySet()) {
+            int id = pair.getKey();
+            String name = pair.getValue();
+
+            String fullLink = String.format(linkSchema, id, startDate.format(formatter), endDate.format(formatter), 0);
+
+            Document document = Jsoup.connect(fullLink)
+                    .cookie("auth", SESS)
+                    .get();
+
+            Element masterSelect = document.getElementsByAttributeValue("name", "master_id").first();
+            Elements elements = masterSelect.getElementsByTag("option");
+
+            for (Element element : elements) {
+                int masterId = Integer.parseInt(element.attr("value"));
+                String masterName = element.text();
+                if (masterId == 0) continue;
+
+                String masterLink = String.format(linkSchema, id, startDate.format(formatter), endDate.format(formatter), masterId);
+
+                document = Jsoup.connect(masterLink)
+                        .cookie("auth", SESS)
+                        .get();
+
+                Element incomeElem = document.getElementsByClass("col-lg-4").first();
+                String incomeS = incomeElem.getElementsByTag("h1").text();
+                incomeS = incomeS.substring(0, incomeS.length() - 2);
+                incomeS = incomeS.replaceAll(" ", "");
+                Double income = Double.parseDouble(incomeS);
+
+                String masterResult = name + "\t" + masterName + "\t" + income;
+                resultList.add(masterResult);
+                System.out.println(masterResult);
+            }
+        }
+
+        File masterFile = new File("C:/Подработка/mastersIncome.txt");
+        if (masterFile.exists()) masterFile.delete();
+
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(masterFile));
+        for (String s : resultList) {
+            bufferedWriter.write(s);
+            bufferedWriter.newLine();
+        }
+        bufferedWriter.close();
     }
 
     private void downloadGoogsSale(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) {
