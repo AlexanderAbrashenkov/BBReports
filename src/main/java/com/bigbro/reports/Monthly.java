@@ -14,6 +14,7 @@ import java.net.URLConnection;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -318,10 +319,12 @@ public class Monthly {
                 for(Element servElem : serviceElements) {
                     String servName = servElem.getElementsByClass("event-title-text").first().text();
                     String servPrice = servElem.getElementsByClass("price").first().text();
+                    servPrice = servPrice.replace(" ", "");
+                    int priceN = firstInt(servPrice);
                     String result = name
                             + "\t" + categoryName
                             + "\t" + servName
-                            + "\t" + servPrice;
+                            + "\t" + priceN;
                     System.out.println(result);
                     resultList.add(result);
                 }
@@ -339,6 +342,12 @@ public class Monthly {
             bufferedWriter.newLine();
         }
         bufferedWriter.close();
+    }
+
+    private int firstInt(String servPrice) {
+        String str = servPrice.replaceAll("[^0-9]+", " ");
+        String[] strs = str.trim().split(" ");
+        return !strs[0].equals("") ? Integer.parseInt(strs[0]) : 0;
     }
 
     private void downloadGoogsSale(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) {
