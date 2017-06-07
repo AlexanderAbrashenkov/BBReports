@@ -38,17 +38,21 @@ public class Selenium {
         try {
             startChromeDriver();
             sess = getDriver().manage().getCookieNamed("auth").getValue();
-            getDriver().quit();
+            quitChromeDriver();
         } catch (InterruptedException e) {
             if (getDriver() != null) {
-                getDriver().quit();
+                quitChromeDriver();
             }
             e.printStackTrace();
         }
         return sess;
     }
 
-    private void startChromeDriver() throws InterruptedException {
+    public void quitChromeDriver() {
+        getDriver().quit();
+    }
+
+    public void launchChromeDriver() {
         System.setProperty("webdriver.chrome.driver", new File("").getAbsolutePath() + "/ChromeDriver/chromedriver.exe");
 
         HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
@@ -65,6 +69,10 @@ public class Selenium {
         driver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS);
         driver.manage().timeouts().setScriptTimeout(60, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
+    }
+
+    private void startChromeDriver() throws InterruptedException {
+        launchChromeDriver();
 
         FileInputStream fis;
         Properties property = new Properties();
