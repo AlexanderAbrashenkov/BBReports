@@ -112,18 +112,28 @@ public class Weekly {
                     .cookie("auth", SESS)
                     .get();
 
-            String clientS = document.getElementsContainingOwnText("Завершенных")
-                    .first()
-                    .parent()
-                    .parent()
-                    .getElementsByTag("h1")
-                    .text();
-            System.out.println(clientS);
+            System.out.print(name + ": ");
 
-            String repClientS = document.getElementsContainingOwnText("Повторные визиты")
-                    .first()
-                    .previousElementSibling()
-                    .text();
+            String clientS = "0";
+
+            Element clientElem = document.getElementsContainingOwnText("Завершенных")
+                    .first();
+            if (clientElem != null) {
+                clientS = clientElem.parent()
+                        .parent()
+                        .getElementsByTag("h1")
+                        .text();
+            }
+            System.out.print(clientS + ", ");
+
+            String repClientS = "0";
+
+            Element repClientElem = document.getElementsContainingOwnText("Повторные визиты")
+                    .first();
+            if (clientElem != null) {
+                repClientS = repClientElem.previousElementSibling()
+                        .text();
+            }
             System.out.println(repClientS);
 
             int clients = Integer.parseInt(clientS);
