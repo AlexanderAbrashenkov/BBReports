@@ -1,30 +1,22 @@
 package com.bigbro.reports;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.remote.CapabilityType;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by market6 on 15.05.2017.
@@ -39,19 +31,21 @@ public class Monthly {
 
     public void downloadDatas(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
 
-        downloadRecordFiles(cityMap, startDate, endDate);
+        //downloadRecordFiles(cityMap, startDate, endDate);
 
-        downloadFinanceFiles(cityMap, startDate, endDate);
+        //downloadFinanceFiles(cityMap, startDate, endDate);
 
-        downloadClientBase(cityMap);
+        //downloadClientBase(cityMap);
 
-        downloadServices(cityMap, startDate, endDate);
+        //downloadServices(cityMap, startDate, endDate);
+
+        //downloadClientsByMasters(cityMap, startDate, endDate);
+
+        downloadServicesPrice(cityMap);
 
         //выгрузка из family.likebro
         //downloadGoogsSale(cityMap, startDate, endDate);
     }
-
-
 
     private void downloadRecordFiles(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
         //todo: загрузка записей по годам
@@ -81,7 +75,6 @@ public class Monthly {
         visitDateToS = createDateToS;
         downloadRecordFilesByYear(cityMap, visitDateFromS, visitDateToS, createDateFromS, createDateToS, yearS);
     }
-
 
 
     private void downloadRecordFilesByYear(Map<Integer, String> cityMap, String visitDateFromS, String visitDateToS, String createDateFromS, String createDateToS, String yearS) throws InterruptedException, IOException {
@@ -116,6 +109,8 @@ public class Monthly {
             out.close();
         }
     }
+
+
 
     private void downloadFinanceFiles(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
         String linkSchema = "https://" + Selenium.getSiteName() + "/finances_reports/period_to_csv/%d?start_date=%s&end_date=%s";
@@ -218,6 +213,141 @@ public class Monthly {
             in.close();
             out.close();
         }
+    }
+
+    private void downloadClientsByMasters(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws IOException {
+        String linkSchema = "https://yclients.com/analytics/%d?start_date=%s&end_date=%s&user_id=0&position_id=0&master_id=%d";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+        ArrayList<String> resultList = new ArrayList<>();
+
+        for (Map.Entry<Integer, String> pair : cityMap.entrySet()) {
+            int id = pair.getKey();
+            String name = pair.getValue();
+
+            String fullLink = String.format(linkSchema, id, startDate.format(formatter), endDate.format(formatter), 0);
+
+            Document document = Jsoup.connect(fullLink)
+                    .cookie("auth", SESS)
+                    .get();
+
+            Element masterSelect = document.getElementsByAttributeValue("name", "master_id").first();
+            Elements elements = masterSelect.getElementsByTag("option");
+
+            for (Element element : elements) {
+                int masterId = Integer.parseInt(element.attr("value"));
+                String masterName = element.text();
+                if (masterId == 0) continue;
+
+                String masterLink = String.format(linkSchema, id, startDate.format(formatter), endDate.format(formatter), masterId);
+
+                document = Jsoup.connect(masterLink)
+                        .cookie("auth", SESS)
+                        .get();
+
+                Element incomeElem = document.getElementsByClass("col-lg-4").first();
+                String incomeS = incomeElem.getElementsByTag("h1").text();
+                incomeS = incomeS.substring(0, incomeS.length() - 2);
+                incomeS = incomeS.replaceAll(" ", "");
+                Double income = Double.parseDouble(incomeS);
+
+                String masterResult = name + "\t" + masterName + "\t" + income;
+                resultList.add(masterResult);
+                System.out.println(masterResult);
+            }
+        }
+
+        File masterFile = new File("C:/Подработка/mastersIncome.txt");
+        if (masterFile.exists()) masterFile.delete();
+
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(masterFile));
+        for (String s : resultList) {
+            bufferedWriter.write(s);
+            bufferedWriter.newLine();
+        }
+        bufferedWriter.close();
+    }
+
+    private void downloadServicesPrice(Map<Integer, String> cityMap) throws IOException, InterruptedException {
+        String linkSchema = "https://n10209.yclients.com/company:%d/idx:0/service?o=";
+
+        ArrayList<String> resultList = new ArrayList<>();
+
+        Selenium selenium = new Selenium();
+        selenium.launchChromeDriver();
+
+        WebDriver driver = selenium.getDriver();
+
+        for (Map.Entry<Integer, String> pair : cityMap.entrySet()) {
+            int id = pair.getKey();
+            String name = pair.getValue();
+
+            String fullLink = String.format(linkSchema, id);
+
+            driver.get(fullLink);
+            Thread.sleep(5000);
+            selenium.waitForJSandJQueryToLoad();
+
+            List<WebElement> webElements = driver.findElements(By.className("service-group-wrapper"));
+            for (WebElement webElement : webElements) {
+                Elements hidden = Jsoup.parse(webElement.getAttribute("outerHTML")).getElementsByClass("services__service-list_hided");
+                if (hidden.size() > 0) {
+                    webElement.findElement(By.className("fa-angle-down")).click();
+                    Thread.sleep(2000);
+                    selenium.waitForJSandJQueryToLoad();
+                }
+            }
+
+            Document document = Jsoup.parse(driver.getPageSource());
+
+            /*Document document = Jsoup.connect(fullLink)
+                    .get();*/
+
+            Elements categoryElements = document.getElementsByClass("service-group-wrapper");
+
+            for (Element element : categoryElements) {
+                Elements content = element.getElementsByTag("h3");
+                if (content.size() == 0) continue;
+
+                String categoryName = element.getElementsByTag("h3").first().text();
+
+                Elements serviceElements;
+                serviceElements = element.getElementsByTag("yclients-record-service-item");
+                if (serviceElements.size() == 0)
+                    serviceElements = element.getElementsByTag("yclients-record-service-item-serial");
+
+                for(Element servElem : serviceElements) {
+                    String servName = servElem.getElementsByClass("event-title-text").first().text();
+                    String servPrice = servElem.getElementsByClass("price").first().text();
+                    servPrice = servPrice.replace(" ", "");
+                    int priceN = firstInt(servPrice);
+                    String result = name
+                            + "\t" + categoryName
+                            + "\t" + servName
+                            + "\t" + priceN;
+                    System.out.println(result);
+                    resultList.add(result);
+                }
+            }
+        }
+
+        selenium.quitChromeDriver();
+
+        File servFile = new File("C:/Подработка/servicePrice.txt");
+        if (servFile.exists()) servFile.delete();
+
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(servFile));
+        for (String s : resultList) {
+            bufferedWriter.write(s);
+            bufferedWriter.newLine();
+        }
+        bufferedWriter.close();
+    }
+
+    private int firstInt(String servPrice) {
+        String str = servPrice.replaceAll("[^0-9]+", " ");
+        String[] strs = str.trim().split(" ");
+        return !strs[0].equals("") ? Integer.parseInt(strs[0]) : 0;
     }
 
     private void downloadGoogsSale(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) {
