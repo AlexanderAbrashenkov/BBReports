@@ -14,7 +14,6 @@ import java.net.URLConnection;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,15 +30,15 @@ public class Monthly {
 
     public void downloadDatas(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
 
-        //downloadRecordFiles(cityMap, startDate, endDate);
+        downloadRecordFiles(cityMap, startDate, endDate);
 
-        //downloadFinanceFiles(cityMap, startDate, endDate);
+        downloadFinanceFiles(cityMap, startDate, endDate);
 
-        //downloadClientBase(cityMap);
+        downloadClientBase(cityMap);
 
-        //downloadServices(cityMap, startDate, endDate);
+        downloadServices(cityMap, startDate, endDate);
 
-        //downloadClientsByMasters(cityMap, startDate, endDate);
+        downloadIncomeByMasters(cityMap, startDate, endDate);
 
         downloadServicesPrice(cityMap);
 
@@ -215,7 +214,7 @@ public class Monthly {
         }
     }
 
-    private void downloadClientsByMasters(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws IOException {
+    private void downloadIncomeByMasters(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws IOException {
         String linkSchema = "https://yclients.com/analytics/%d?start_date=%s&end_date=%s&user_id=0&position_id=0&master_id=%d";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
