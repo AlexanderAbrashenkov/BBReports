@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by market6 on 15.05.2017.
@@ -30,16 +31,22 @@ public class Monthly {
 
     public void downloadDatas(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
 
+        System.out.println("--- Загружаем записи ---");
         downloadRecordFiles(cityMap, startDate, endDate);
 
+        System.out.println("--- Загружаем финансы ---");
         downloadFinanceFiles(cityMap, startDate, endDate);
 
+        System.out.println("--- Загружаем клиентские базы ---");
         downloadClientBase(cityMap);
 
+        System.out.println("--- Загружаем услуги ---");
         downloadServices(cityMap, startDate, endDate);
 
+        System.out.println("--- Загружаем доходы мастеров ---");
         downloadIncomeByMasters(cityMap, startDate, endDate);
 
+        System.out.println("--- Загружаем стоимость услуг ---");
         downloadServicesPrice(cityMap);
 
         //выгрузка из family.likebro
@@ -83,29 +90,31 @@ public class Monthly {
             String s = String.format(linkSchema, pair.getKey(), visitDateFromS, visitDateToS, createDateFromS, createDateToS);
             String name = pair.getValue();
 
-            System.out.println(s);
-
             URL url = new URL(s);
             URLConnection connection = url.openConnection();
 
             connection.addRequestProperty("Cookie", "auth=" + SESS);
 
-            InputStream in = connection.getInputStream();
+            try(InputStream in = connection.getInputStream()) {
 
-            File destFile = new File("C:/Подработка/Подработка/Ежемесяч/" + name + " " + yearS + ".xls");
+                File destFile = new File("C:/Подработка/Подработка/Ежемесяч/" + name + " " + yearS + ".xls");
 
-            FileOutputStream out = new FileOutputStream(destFile);
+                FileOutputStream out = new FileOutputStream(destFile);
 
-            byte[] buffer = new byte[1024];
-            int len = in.read(buffer);
+                byte[] buffer = new byte[1024];
+                int len = in.read(buffer);
 
-            while (len != -1) {
-                out.write(buffer, 0, len);
-                len = in.read(buffer);
+                while (len != -1) {
+                    out.write(buffer, 0, len);
+                    len = in.read(buffer);
+                }
+
+                out.close();
+
+                System.out.println("Загружено " + pair.getValue() + ", " + visitDateFromS + "-" + visitDateToS);
+            } catch (IOException e) {
+                System.out.println("ОШИБКА ЗАГРУЗКИ: " + pair.getValue() + ", " + visitDateFromS + "-" + visitDateToS);
             }
-
-            in.close();
-            out.close();
         }
     }
 
@@ -250,16 +259,16 @@ public class Monthly {
                 incomeS = incomeS.replaceAll(" ", "");
                 Double income = Double.parseDouble(incomeS);
 
-                String masterResult = name + "\t" + masterName + "\t" + income;
+                String masterResult = startDate.format(formatter) + "\t" + endDate.format(formatter) + "\t" + name + "\t" + masterName + "\t" + income;
                 resultList.add(masterResult);
                 System.out.println(masterResult);
             }
         }
 
         File masterFile = new File("C:/Подработка/mastersIncome.txt");
-        if (masterFile.exists()) masterFile.delete();
+        //if (masterFile.exists()) masterFile.delete();
 
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(masterFile));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(masterFile, true));
         for (String s : resultList) {
             bufferedWriter.write(s);
             bufferedWriter.newLine();
@@ -351,5 +360,39 @@ public class Monthly {
 
     private void downloadGoogsSale(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) {
         //todo: загрузка продаж товаров
+    }
+
+    public static void main(String[] args) throws IOException {
+        Map<Integer, String> cityMap = new TreeMap<>();
+
+        File citiesFile = new File("cities.txt");
+        if (citiesFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(citiesFile)))) {
+                while (reader.ready()) {
+                    String readedCity = reader.readLine();
+                    if (readedCity.length() > 0) {
+                        int dotIndex = readedCity.indexOf(".");
+                        int commaIndex = readedCity.indexOf(",");
+                        String cityName = readedCity.substring(dotIndex + 2, commaIndex);
+                        int cityIndex = Integer.parseInt(readedCity.substring(commaIndex + 2, readedCity.length()));
+                        cityMap.put(cityIndex, cityName);
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        Monthly monthly = new Monthly("itju949uljigd8ug9nekok4jb7");
+
+        LocalDate startDate = LocalDate.of(2015, 4, 1);
+
+        while (startDate.isBefore(LocalDate.of(2017, 7, 1))) {
+            LocalDate endDate = startDate.plusMonths(1).minusDays(1);
+            monthly.downloadIncomeByMasters(cityMap, startDate, endDate);
+            startDate = startDate.plusMonths(1);
+        }
     }
 }
