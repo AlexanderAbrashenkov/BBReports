@@ -1,5 +1,5 @@
 .idea
 ChromeDriver/
-src/main/resources/
+src/main/resources/*.properties
 src/test/
 target/

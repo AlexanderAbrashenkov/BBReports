@@ -253,7 +253,7 @@ public class Monthly {
                         .cookie("auth", SESS)
                         .get();
 
-                Element incomeElem = document.getElementsByClass("col-lg-4").first();
+                Element incomeElem = document.getElementsByClass("col-sm-4").get(1);
                 String incomeS = incomeElem.getElementsByTag("h1").text();
                 incomeS = incomeS.substring(0, incomeS.length() - 2);
                 incomeS = incomeS.replaceAll(" ", "");

@@ -1,9 +1,6 @@
 package com.bigbro.reports;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.CapabilityType;
@@ -57,6 +54,7 @@ public class Selenium {
 
         HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
         chromePrefs.put("profile.default_content_settings.popups", 0);
+        chromePrefs.put("profile.managed_default_content_settings.images", 2);
         ChromeOptions options = new ChromeOptions();
         options.setExperimentalOption("prefs", chromePrefs);
         options.addArguments("--dns-prefetch-disable");
@@ -138,8 +136,16 @@ public class Selenium {
         ExpectedCondition<Boolean> jsLoad = new ExpectedCondition<Boolean>() {
             @Override
             public Boolean apply(WebDriver driver) {
-                return ((JavascriptExecutor) getDriver()).executeScript("return document.readyState")
-                        .toString().equals("complete");
+                boolean canContinue = false;
+                do {
+                    try {
+                         canContinue = ((JavascriptExecutor) getDriver()).executeScript("return document.readyState")
+                                .toString().equals("complete");
+                    } catch (TimeoutException e) {
+                        continue;
+                    }
+                } while (!canContinue);
+                return canContinue;
             }
         };
 
