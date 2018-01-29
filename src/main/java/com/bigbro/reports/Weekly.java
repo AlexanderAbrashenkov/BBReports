@@ -3,19 +3,8 @@ package com.bigbro.reports;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.remote.CapabilityType;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDate;
@@ -24,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by market6 on 15.05.2017.
@@ -41,18 +29,18 @@ public class Weekly {
 
         downloadAndRenameFile(cityMap, startDate, endDate);
 
-        Map<String, List<Integer>> clientsMap = getClientsCount(cityMap, startDate, endDate);
+        Map<Integer, List<Integer>> clientsMap = getClientsCount(cityMap, startDate, endDate);
 
         File clientStat = new File("C:\\Подработка\\Еженедельные\\clientStat.txt");
 
         if (clientStat.exists()) clientStat.delete();
 
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(clientStat)));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(clientStat), "UTF-8"));
 
-        for (Map.Entry<String, List<Integer>> pair : clientsMap.entrySet()) {
-            String name = pair.getKey();
+        for (Map.Entry<Integer, List<Integer>> pair : clientsMap.entrySet()) {
+            int id = pair.getKey();
             List<Integer> clients = pair.getValue();
-            String city = name + "\t" + clients.get(0) + "\t" + clients.get(1);
+            String city = id + "," + clients.get(0) + "," + clients.get(1);
             writer.write(city);
             writer.newLine();
         }
@@ -79,7 +67,7 @@ public class Weekly {
 
             InputStream in = connection.getInputStream();
 
-            File destFile = new File("C:/Подработка/Еженедельные/" + name + ".csv");
+            File destFile = new File("C:/Подработка/Еженедельные/" + id + "," + name + ".csv");
 
             FileOutputStream out = new FileOutputStream(destFile);
 
@@ -97,12 +85,12 @@ public class Weekly {
     }
 
 
-    private Map<String, List<Integer>> getClientsCount(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
+    private Map<Integer, List<Integer>> getClientsCount(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
         String linkSchema = "https://" + Selenium.getSiteName() + "/analytics/%d?start_date=%s&end_date=%s&master_id=0&user_id=0\n";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        Map<String, List<Integer>> result = new HashMap<>();
+        Map<Integer, List<Integer>> result = new HashMap<>();
 
-        for(Map.Entry<Integer, String> pair : cityMap.entrySet()) {
+        for (Map.Entry<Integer, String> pair : cityMap.entrySet()) {
             int id = pair.getKey();
             String name = pair.getValue();
 
@@ -141,7 +129,7 @@ public class Weekly {
             List<Integer> clientList = new ArrayList<>();
             clientList.add(clients);
             clientList.add(newClients);
-            result.put(name, clientList);
+            result.put(id, clientList);
         }
         return result;
     }
