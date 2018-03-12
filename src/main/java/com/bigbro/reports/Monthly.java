@@ -32,19 +32,19 @@ public class Monthly {
     public void downloadDatas(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
 
         System.out.println("--- Загружаем записи ---");
-        downloadRecordFiles(cityMap, startDate, endDate);
+        //downloadRecordFiles(cityMap, startDate, endDate);
 
         System.out.println("--- Загружаем финансы ---");
-        downloadFinanceFiles(cityMap, startDate, endDate);
+        //downloadFinanceFiles(cityMap, startDate, endDate);
 
         System.out.println("--- Загружаем клиентские базы ---");
-        downloadClientBase(cityMap);
+        //downloadClientBase(cityMap);
 
         System.out.println("--- Загружаем услуги ---");
         downloadServices(cityMap, startDate, endDate);
 
         System.out.println("--- Загружаем доходы мастеров ---");
-        downloadIncomeByMasters(cityMap, startDate, endDate);
+        //downloadIncomeByMasters(cityMap, startDate, endDate);
 
         System.out.println("--- Загружаем стоимость услуг ---");
         downloadServicesPrice(cityMap);
@@ -333,10 +333,10 @@ public class Monthly {
                             + "\t" + categoryName
                             + "\t" + servName
                             + "\t" + priceN;
-                    System.out.println(result);
                     resultList.add(result);
                 }
             }
+            System.out.println(name + " price list was downloaded. Now " + resultList.size() + " prices total got.");
         }
 
         selenium.quitChromeDriver();
