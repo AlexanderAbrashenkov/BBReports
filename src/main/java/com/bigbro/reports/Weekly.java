@@ -35,12 +35,13 @@ public class Weekly {
 
         if (clientStat.exists()) clientStat.delete();
 
+        System.out.println("Запись в файл");
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(clientStat), "UTF-8"));
 
         for (Map.Entry<Integer, List<Integer>> pair : clientsMap.entrySet()) {
             int id = pair.getKey();
             List<Integer> clients = pair.getValue();
-            String city = id + "," + clients.get(0) + "," + clients.get(1);
+            String city = id + ";" + clients.get(0) + ";" + clients.get(1);
             writer.write(city);
             writer.newLine();
         }
@@ -48,15 +49,21 @@ public class Weekly {
         writer.flush();
         writer.close();
 
+        System.out.println("==========  ГОТОВО  ===========");
     }
 
     private void downloadAndRenameFile(Map<Integer, String> cityMap, LocalDate startDate, LocalDate endDate) throws InterruptedException, IOException {
         String linkSchema = "https://" + Selenium.getSiteName() + "/finances_reports/period_to_csv/%d?start_date=%s&end_date=%s";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
+        System.out.println("Выгрузка файлов с данными");
+        int i = 1;
         for (Map.Entry<Integer, String> pair : cityMap.entrySet()) {
             int id = pair.getKey();
             String name = pair.getValue();
+
+            System.out.println(i + ": " + name);
+            i++;
 
             String fullLink = String.format(linkSchema, id, startDate.format(formatter), endDate.format(formatter));
 
@@ -90,6 +97,8 @@ public class Weekly {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         Map<Integer, List<Integer>> result = new HashMap<>();
 
+        System.out.println("Выгрузка по клиентам");
+        int i = 1;
         for (Map.Entry<Integer, String> pair : cityMap.entrySet()) {
             int id = pair.getKey();
             String name = pair.getValue();
@@ -100,7 +109,8 @@ public class Weekly {
                     .cookie("auth", SESS)
                     .get();
 
-            System.out.print(name + ": ");
+            System.out.print(i + ": " + name + ": ");
+            i++;
 
             String clientS = "0";
 

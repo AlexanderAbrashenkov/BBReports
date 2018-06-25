@@ -102,6 +102,7 @@ public class Selenium {
         waitForJSandJQueryToLoad();
 
         WebElement emailField = getDriver().findElement(By.name("email"));
+        emailField.click();
         emailField.sendKeys(login);
 
         WebElement passwordField = getDriver().findElement(By.name("password"));
